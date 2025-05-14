@@ -27,7 +27,8 @@ def create_new_run(template_dir):
     new_run_dir = f'run{new_index}'
     
     try:
-        shutil.copytree(template_dir, new_run_dir)
+        # Copy with symlinks=True to preserve symbolic links
+        shutil.copytree(template_dir, new_run_dir, symlinks=True)
         # Update notes.yaml
         notes_path = os.path.join(new_run_dir, 'notes.yaml')
         if os.path.exists(notes_path):
