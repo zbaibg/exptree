@@ -1,0 +1,9 @@
+id: template # Should be the same as the directory name. Either begin with template or is run with a number
+name: The first template # The readable name
+group:
+comment:
+#Add any other custom keys you want.
+#If you want to keep the comments while updating the yaml file, put the comment inline with the key.
+a:
+b:
+c:
