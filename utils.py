@@ -9,12 +9,21 @@ import pandas as pd
 STRING_YAML_EMPTY='yaml_empty'
 STRING_YAML_NO_KEY='yaml_no_key'
 def read_notes_yaml(file_path):
+    '''
+    read the yaml file and check the id is the same as the directory name
+    assert the yaml file is not empty
+    assert the id in the yaml file is the same as the directory name
+    return the data in the yaml file
+    '''
     yaml = YAML()
     with open(file_path, 'r') as f:
         data = yaml.load(f)
+        assert data is not None, f"The yaml file {file_path} is empty"
         for key in data.keys():
             if data[key] is None:
                 data[key] = STRING_YAML_EMPTY
+    foldername=os.path.basename(os.path.dirname(file_path))
+    assert data['id'] == foldername, f"The id {data['id']} in the yaml file {file_path} is not the same as the directory name {foldername}"
     return data
 
 def normalize_value(value):
@@ -29,7 +38,8 @@ def get_df_from_folders():
     '''
     Get the df from the notes.yaml files in the run and template directories,
     the index of the df will be set to be the id column
-    id is checked to be the same as the directory name
+    id is checked to be the same as the directory name,
+    the yaml file is checked to be not empty
     '''
     # Find all run directories and template directories
     run_dirs = sorted(glob.glob('run[0-9]*'))
@@ -41,7 +51,6 @@ def get_df_from_folders():
         yaml_file = os.path.join(run_dir, 'notes.yaml')
         if os.path.exists(yaml_file):
             data = read_notes_yaml(yaml_file)
-            assert data['id'] == os.path.basename(run_dir)
             all_data.append(data)
     
     # Create DataFrame
@@ -189,7 +198,10 @@ def modify_yamls_by_func(func,check_template=False,write=False):
                 template_index.append(index)
         df_old=df_old.drop(template_index,axis=0)
     index_in_df_old=df_old.index
-    df_modified = func(df_old)
+    df_modified = func(df_old.copy())
+    # For adaption with other functions, here convert all columns to string and strip whitespace
+    for column in df_modified.columns:
+        df_modified[column] = df_modified[column].astype('string').str.strip()
     id_in_df_modified=df_modified['id']
     assert set(df_modified.index) == set(index_in_df_old), "The index of the modified df should be the same as the old df"
     assert set(id_in_df_modified) == set(index_in_df_old), "The id column of the modified df should be the same as the old df"
