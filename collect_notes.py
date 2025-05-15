@@ -5,7 +5,7 @@ import pandas as pd
 import glob
 import shutil
 import argparse
-from utils import get_df_from_folders, get_df_from_csv, create_empty_df, compare_two_df
+from utils import get_df_from_folders, get_df_from_csv, create_empty_df, compare_two_df, STRING_YAML_NO_KEY
 
 
 
@@ -60,6 +60,8 @@ def main():
             if os.path.exists('notes_summary.csv'):
                 shutil.copy2('notes_summary.csv', 'notes_summary.csv.bk')
                 print("\nCreated backup: notes_summary.csv.bk")
+            # Replace STRING_YAML_NO_KEY with None in the DataFrame
+            new_df = new_df.replace(STRING_YAML_NO_KEY, None)
             new_df.to_csv('notes_summary.csv', index=False)
             print("Results saved to notes_summary.csv")
         else:
