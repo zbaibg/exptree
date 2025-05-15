@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-import ast
 import os
-import shutil
 import argparse
-from ruamel.yaml import YAML
-from utils import get_df_from_folders, get_df_from_csv, compare_two_df, STRING_YAML_EMPTY, STRING_YAML_NO_KEY
-from ruamel.yaml.comments import CommentedMap
+from utils import get_df_from_folders, get_df_from_csv, compare_two_df, STRING_YAML_EMPTY, STRING_YAML_NO_KEY, write_yaml_from_csv
 
 
 
@@ -64,62 +60,6 @@ def main():
     else:
         print("\nNo changes detected.")
 
-def write_yaml_from_csv(changed_value_in_csv_id_column,column_order):
-    '''The order of the columns will be written to the yaml as in column_order'''
-    yaml = YAML()
-    yaml.preserve_quotes = True
-    yaml.indent(mapping=2, sequence=2, offset=0)
-    
-    for id in changed_value_in_csv_id_column.keys():
-        changed_value_in_csv_column = changed_value_in_csv_id_column[id]
-        yaml_file = f'{id}/notes.yaml'
-        backup_file = f'{id}/notes.yaml.bk'
-        
-        # Create backup
-        shutil.copy2(yaml_file, backup_file)
-        
-        # Load existing YAML with preserved order
-        with open(yaml_file, 'r') as f:
-            yaml_data = yaml.load(f)
-        
-        # Update values
-        for col, value in changed_value_in_csv_column.items():
-            if value==STRING_YAML_NO_KEY:
-                if col in yaml_data:
-                    yaml_data.pop(col)
-            elif value==STRING_YAML_EMPTY:
-                yaml_data[col] = None
-            else:
-                try:
-                    yaml_data[col] = ast.literal_eval(value) # Convert non-string values to its possible types
-                except:
-                    yaml_data[col] = value # If cannot convert to other types, keep it as string
-                
-        # Sort the yaml data according to the column order while keeping the comments
-        yaml_data = sort_yaml_keys_keep_comments(yaml_data,column_order)
-        # Write back to file
-        with open(yaml_file, 'w') as f:
-            yaml.dump(yaml_data, f)
-def sort_yaml_keys_keep_comments(yaml_data: CommentedMap, column_order: list) -> CommentedMap:
-    # Create a new map to store the sorted data
-    new_map = CommentedMap()
-    
-    # First add keys that are in column_order in that order
-    for key in column_order:
-        if key in yaml_data:
-            new_map[key] = yaml_data[key]
-            # Preserve comments if they exist
-            if key in yaml_data.ca.items:
-                new_map.ca.items[key] = yaml_data.ca.items[key]
-    
-    # Then add any remaining keys that weren't in column_order
-    for key in yaml_data:
-        if key not in column_order:
-            new_map[key] = yaml_data[key]
-            # Preserve comments if they exist
-            if key in yaml_data.ca.items:
-                new_map.ca.items[key] = yaml_data.ca.items[key]
-    
-    return new_map
+
 if __name__ == "__main__":
     main() 
