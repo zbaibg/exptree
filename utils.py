@@ -206,3 +206,9 @@ def modify_yamls_by_func(func,check_template=False,write=False):
                 print(f"  {col}: {changed_value_in_df_old_column[col]} -> {changed_value_in_df_modified_column[col]}")
     if write:
         write_yaml_from_csv(changed_value_in_df_modified_id_column,df_modified.columns)
+        print("Yaml files have been updated.")
+    else:
+        print("\n" + "="*80)
+        print("This is a preview mode. No changes have been written to the yaml files.")
+        print("To apply these changes, run the command with --write flag:")
+        print("="*80)
