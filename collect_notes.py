@@ -5,7 +5,7 @@ import pandas as pd
 import glob
 import shutil
 import argparse
-from utils import get_df_from_folders, get_df_from_csv, create_empty_df, compare_two_df, STRING_YAML_NO_KEY
+from utils import get_df_from_folders, get_df_from_csv, create_empty_df, compare_two_df, STRING_YAML_NO_KEY, write_csv_from_df
 
 
 
@@ -57,13 +57,7 @@ def main():
     # Handle changes based on --write flag
     if has_changes_in_all:
         if args.write:
-            if os.path.exists('notes_summary.csv'):
-                shutil.copy2('notes_summary.csv', 'notes_summary.csv.bk')
-                print("\nCreated backup: notes_summary.csv.bk")
-            # Replace STRING_YAML_NO_KEY with None in the DataFrame
-            new_df = new_df.replace(STRING_YAML_NO_KEY, None)
-            new_df.to_csv('notes_summary.csv', index=False)
-            print("Results saved to notes_summary.csv")
+            write_csv_from_df(new_df)
         else:
             print("\n" + "="*80)
             print("This is a preview mode. No changes have been written to the notes_summary.csv.")

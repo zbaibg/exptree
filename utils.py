@@ -164,6 +164,20 @@ def write_yaml_from_csv(changed_value_in_csv_id_column,column_order):
         # Write back to file
         with open(yaml_file, 'w') as f:
             yaml.dump(yaml_data, f)
+def write_csv_from_df(df):
+    '''
+    Write the df to the notes_summary.csv file
+    if the file exists, create a backup
+    replace STRING_YAML_NO_KEY with None in the DataFrame
+    '''
+    df=df.copy()
+    if os.path.exists('notes_summary.csv'):
+        shutil.copy2('notes_summary.csv', 'notes_summary.csv.bk')
+        print("\nCreated backup: notes_summary.csv.bk")
+    # Replace STRING_YAML_NO_KEY with None in the DataFrame
+    df = df.replace(STRING_YAML_NO_KEY, None)
+    df.to_csv('notes_summary.csv', index=False)
+    print("Results saved to notes_summary.csv")
 def sort_yaml_keys_keep_comments(yaml_data: CommentedMap, column_order: list) -> CommentedMap:
     # Create a new map to store the sorted data
     new_map = CommentedMap()
