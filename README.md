@@ -16,7 +16,7 @@ This trial-and-error process is akin to reinforcement learning or generative thi
 
 `exptree` embraces this flexibility. It is not just a toolkit—it represents a workflow philosophy. Users manually maintain `notes.yaml` files within each run directory to record metadata, parameters, and observations. `exptree` provides tools to collect these YAML files into a centralized `notes_summary.csv` for easier inspection and analysis. It also allows users to push changes from the CSV back into the individual YAML files.
 
-This workflow prioritizes human readability and adaptability over rigid automation. It allows users to explore freely and iteratively refine their experiments. Once the file structures and output formats stabilize, users may optionally write lightweight scripts to populate `notes.yaml` automatically—for example, by filling in results parsed from output files. However, `exptree` deliberately avoids enforcing this early on, preserving the creative freedom that is essential during the exploratory phase of computational science.
+This workflow prioritizes human readability and adaptability over rigid automation. It allows users to explore freely and iteratively refine their experiments. Once the file structures and output formats stabilize, users may optionally write lightweight scripts to populate `notes.yaml` automatically—for example, by filling in results parsed from output files (You can use the script to fill in the CSV and update `notes.yaml` by `update_notes.py`). However, `exptree` deliberately avoids enforcing this early on, preserving the creative freedom that is essential during the exploratory phase of computational science.
 
 If you find this tool helpful, please consider giving it a star on GitHub :)
 
