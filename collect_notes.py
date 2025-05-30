@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 import os
-import yaml
 import pandas as pd
-import glob
-import shutil
 import argparse
 from utils import get_df_from_folders, get_df_from_csv, create_empty_df, compare_two_df, STRING_YAML_NO_KEY, write_csv_from_df
 
