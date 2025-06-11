@@ -51,6 +51,10 @@ def get_df_from_folders():
         yaml_file = os.path.join(run_dir, 'notes.yaml')
         if os.path.exists(yaml_file):
             data = read_notes_yaml(yaml_file)
+            for key in data.keys(): 
+            # manually convert to str before converting to DatFrame, 
+            # this will make sure value 1 in notes.yaml is converted to "1" instead of "1.0" in DataFrame when doing collect_notes.py
+                data[key] = str(data[key])
             all_data.append(data)
     
     # Create DataFrame
@@ -62,10 +66,11 @@ def get_df_from_folders():
         new_df[column] = new_df[column].astype('string').str.strip()
     return new_df
 
-def get_df_from_csv():
+def get_df_from_csv(convert_str_to_objects=False):
     '''
     Get the df from the notes_summary.csv file,
     the index of the df will be set to be the id column
+    convert_str_to_objects: if True, convert the string values to objects 
     '''
     if os.path.exists('notes_summary.csv'):
         existing_df = pd.read_csv('notes_summary.csv').fillna(value=STRING_YAML_NO_KEY)
@@ -73,6 +78,14 @@ def get_df_from_csv():
         # Convert all columns to string type and strip whitespace
         for column in existing_df.columns:
             existing_df[column] = existing_df[column].astype('string').str.strip()
+        if convert_str_to_objects:
+            existing_df=existing_df.copy().astype('object')
+            for column in existing_df.columns:
+                for index,row in existing_df.iterrows():
+                    try:
+                        existing_df.loc[[index],column]=pd.Series([ast.literal_eval(existing_df.loc[index,column])],index=[index])
+                    except:
+                        pass
         return existing_df
     else:
         return None
