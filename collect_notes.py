@@ -2,7 +2,7 @@
 import os
 import pandas as pd
 import argparse
-from utils import get_df_from_folders, get_df_from_csv, create_empty_df, compare_two_df, STRING_YAML_NO_KEY, write_csv_from_df
+from utils import get_df_from_folders, get_df_from_csv, create_empty_df, compare_two_df, STRING_YAML_NO_KEY, write_csv_from_df, to_ignore_float_error
 
 
 
@@ -10,6 +10,9 @@ def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Collect and compare notes from yaml files')
     parser.add_argument('--write', action='store_true', help='Write changes to files (default: preview only). Ignore the extra ids in the new notes_summary.csv. Namely the program will not delete any row in the notes_summary.csv.')
+    parser.add_argument('--ignore_float_error', action='store_true', help='Ignore float error when comparing information in the notes.yaml files with the notes_summary.csv')
+    parser.add_argument('--abs_error', type=float, default=1e-15, help='Absolute error for float comparison.')
+    parser.add_argument('--rel_error', type=float, default=1e-15, help='Relative error for float comparison.')
     args = parser.parse_args()
 
     has_changes_in_all = False
@@ -28,7 +31,9 @@ def main():
     
     # Find new entries
     ids_only_in_csv, ids_only_in_folders, changed_value_in_csv_id_column,changed_value_in_folders_id_column=compare_two_df(csv_df,folder_df)
-    
+    if args.ignore_float_error:
+        changed_value_in_csv_id_column,changed_value_in_folders_id_column=to_ignore_float_error(changed_value_in_df1_id_column=changed_value_in_csv_id_column,changed_value_in_df2_id_column=changed_value_in_folders_id_column,abs_error=args.abs_error,rel_error=args.rel_error)
+
     if len(ids_only_in_csv) > 0:
         print(f"The following ids are in the existing notes_summary.csv but their folders are not found. These will be kept as is:")
         extra_df=csv_df[list(ids_only_in_csv)]

@@ -1,3 +1,4 @@
+from copy import deepcopy
 import shutil
 import numpy as np
 import glob
@@ -73,7 +74,7 @@ def get_df_from_csv(convert_str_to_objects=False):
     convert_str_to_objects: if True, convert the string values to objects 
     '''
     if os.path.exists('notes_summary.csv'):
-        existing_df = pd.read_csv('notes_summary.csv').fillna(value=STRING_YAML_NO_KEY)
+        existing_df = pd.read_csv('notes_summary.csv',dtype=str).fillna(value=STRING_YAML_NO_KEY)
         existing_df = existing_df.set_index('id', drop=False)
         # Convert all columns to string type and strip whitespace
         for column in existing_df.columns:
@@ -141,6 +142,50 @@ def compare_two_df(df1, df2):
     # Return the dictionary of changes (id: list of changed columns)
 
     return id_only_in_df1, id_only_in_df2, changed_value_in_df1_id_column,changed_value_in_df2_id_column
+
+def to_ignore_float_error(changed_value_in_df1_id_column,changed_value_in_df2_id_column,abs_error=1e-15,rel_error=1e-15):
+    '''
+    check the id - col of two dictionaries and try to convert the string to object.
+    pop those close float numbers from both dictionaries.
+    Also pop those lists with all close float numbers .
+    Note this only works for python-float class, not for numpy-float class.
+    '''
+    new_changed_value_in_df1_id_column=deepcopy(changed_value_in_df1_id_column)
+    new_changed_value_in_df2_id_column=deepcopy(changed_value_in_df2_id_column)
+    assert changed_value_in_df1_id_column.keys()==changed_value_in_df2_id_column.keys(), "The keys of the two dictionaries should be the same"
+    for id in changed_value_in_df1_id_column.keys():
+        assert changed_value_in_df1_id_column[id].keys()==changed_value_in_df2_id_column[id].keys(), f"The cols of id: {id} of the two dictionaries should be the same"
+        for col in changed_value_in_df1_id_column[id].keys():
+            assert isinstance(changed_value_in_df1_id_column[id][col],str) and isinstance(changed_value_in_df2_id_column[id][col],str), f"The value of col: {col} of id: {id} should be a string in both dictionaries"
+            assert changed_value_in_df1_id_column[id][col]!=changed_value_in_df2_id_column[id][col], f"The value of col: {col} of id: {id} should be different in the two dictionaries"
+            try:
+                object1=ast.literal_eval(changed_value_in_df1_id_column[id][col])
+                object2=ast.literal_eval(changed_value_in_df2_id_column[id][col])
+            except:
+                continue
+            if isinstance(object1,float) and isinstance(object2,float):
+                if np.isclose(object1,object2,atol=abs_error,rtol=rel_error):
+                    new_changed_value_in_df1_id_column[id].pop(col)
+                    new_changed_value_in_df2_id_column[id].pop(col)
+            
+            
+            if isinstance(object1,list) and isinstance(object2,list):
+                if len(object1)==len(object2):
+                    list_length=len(object1)
+                    close_float_number=0
+                    for i in range(list_length):
+                        if isinstance(object1[i],float) and isinstance(object2[i],float) and np.isclose(object1[i],object2[i],atol=abs_error,rtol=rel_error):
+                            close_float_number+=1
+                    if close_float_number==list_length:
+                        new_changed_value_in_df1_id_column[id].pop(col)
+                        new_changed_value_in_df2_id_column[id].pop(col)
+        if len(new_changed_value_in_df1_id_column[id])==0 or len(new_changed_value_in_df2_id_column[id])==0:
+            assert len(new_changed_value_in_df1_id_column[id])==0 and len(new_changed_value_in_df2_id_column[id])==0, f"Two dictionaries should both have zero columns for id: {id} now,"
+            new_changed_value_in_df1_id_column.pop(id)
+            new_changed_value_in_df2_id_column.pop(id)
+    return new_changed_value_in_df1_id_column,new_changed_value_in_df2_id_column
+    
+    
 def write_yaml_from_csv(changed_value_in_csv_id_column,column_order):
     '''The order of the columns will be written to the yaml as in column_order'''
     yaml = YAML()
@@ -212,7 +257,7 @@ def sort_yaml_keys_keep_comments(yaml_data: CommentedMap, column_order: list) ->
                 new_map.ca.items[key] = yaml_data.ca.items[key]
     
     return new_map
-def modify_yamls_by_func(func,check_template=False,write=False):
+def modify_yamls_by_func(func,check_template=False,write=False,ignore_float_error=False,abs_error=1e-15,rel_error=1e-15):
     """
     The func should take a df and return a df. It should not create or delete any rows. It should not change the index or id column of the df.
     If write is True, the function will write the changes to the yaml files. Otherwise, it will only print the changes.
@@ -233,9 +278,9 @@ def modify_yamls_by_func(func,check_template=False,write=False):
     assert set(df_modified.index) == set(index_in_df_old), "The index of the modified df should be the same as the old df"
     assert set(id_in_df_modified) == set(index_in_df_old), "The id column of the modified df should be the same as the old df"
     id_only_in_df_old, id_only_in_df_modified, changed_value_in_df_old_id_column,changed_value_in_df_modified_id_column=compare_two_df(df_old,df_modified)
-
+    if ignore_float_error:
+        changed_value_in_df_old_id_column,changed_value_in_df_modified_id_column=to_ignore_float_error(changed_value_in_df1_id_column=changed_value_in_df_old_id_column,changed_value_in_df2_id_column=changed_value_in_df_modified_id_column,abs_error=abs_error,rel_error=rel_error)
     if len(changed_value_in_df_old_id_column) > 0:
-        has_changes_in_all = True
         print("\nChanges in notes.yaml in each folder:")
         for id in changed_value_in_df_old_id_column.keys():
             changed_value_in_df_old_column = changed_value_in_df_old_id_column[id]
@@ -243,6 +288,11 @@ def modify_yamls_by_func(func,check_template=False,write=False):
             print(f"\nChanges in ./{id}/notes.yaml:")
             for col in changed_value_in_df_old_column.keys():
                 print(f"  {col}: {changed_value_in_df_old_column[col]} -> {changed_value_in_df_modified_column[col]}")
+    else:
+        print("\n" + "="*80)
+        print("No changes found in any notes.yaml of the folders. Program terminated without writing any changes to the yaml files.")
+        print("="*80)
+        return
     if write:
         write_yaml_from_csv(changed_value_in_df_modified_id_column,df_modified.columns)
         print("Yaml files have been updated.")
